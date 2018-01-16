@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class LoginController: UIViewController {
 
@@ -22,15 +23,55 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let loginRegisterButton: UIButton = {
+    lazy var loginRegisterButton: UIButton = {
         let button = UIButton(type: .system)
         button.backgroundColor = UIColor(r: 80, g:101, b:161)
         button.setTitle("Register", for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitleColor(UIColor.white, for: .normal)
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        
+        button.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
         return button
     }()
+    
+    @objc func handleRegister() {
+        
+        guard let email = emailTexField.text, let password = passwordTexField.text, let name = nameTexField.text else{
+            print ("Form is not valid")
+            return
+        }
+        
+        Auth.auth().createUser(withEmail: email, password: password, completion: {(user: User?, error) in
+        
+        if error != nil {
+            print (error)
+            return
+            }
+        
+            
+            guard let uid = user?.uid else {
+                return
+            }
+        // successfully authenticated user.
+        
+        
+        
+        let ref = Database.database().reference(fromURL: "https://messagingapp-d0c32.firebaseio.com/")
+        let userReference = ref.child("users").child(uid)
+        let values = ["name": name, "email": email]
+        userReference.updateChildValues(values, withCompletionBlock: { (err, ref) in
+            
+            if err != nil {
+                print (err)
+                return
+            }
+            print("Saved user successfully into Firebase db")
+        })
+        
+    })
+    }
+    
     // creates the name place holder in our center box
     let nameTexField: UITextField = {
         let tf = UITextField()
